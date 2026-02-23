@@ -1,0 +1,25 @@
+{
+    "name": "@repo/importer",
+    "version": "0.0.1",
+    "module": "index.ts",
+    "type": "module",
+    "scripts": {
+        "start": "bun run index.ts"
+    },
+    "devDependencies": {
+        "@types/bun": "latest"
+    },
+    "peerDependencies": {
+        "typescript": "^5"
+    },
+    "dependencies": {
+        "@repo/logger": "*",
+        "@inquirer/prompts": "^8.2.0",
+        "@lunch-money/lunch-money-js-v2": "^2.8.5",
+        "csv-parse": "^6.1.0",
+        "csv-stringify": "^6.6.0",
+        "iconv-lite": "^0.7.2",
+        "otpauth": "^9.5.0",
+        "playwright": "^1.58.2"
+    }
+}

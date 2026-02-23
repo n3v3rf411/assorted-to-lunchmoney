@@ -1,0 +1,16 @@
+{
+    "name": "workspaces",
+    "private": "true",
+    "scripts": {
+        "start": "bun run --cwd=packages/app index.ts",
+        "lint": "biome check --write --unsafe"
+    },
+    "module": "index.ts",
+    "type": "module",
+    "workspaces": [
+        "packages/*"
+    ],
+    "devDependencies": {
+        "@biomejs/biome": "2.4.4"
+    }
+}
