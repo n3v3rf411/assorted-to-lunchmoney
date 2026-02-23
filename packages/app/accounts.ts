@@ -252,6 +252,6 @@ export async function syncRevolutAccounts(revolutAccounts: string[]) {
         }
     }
 
-    matches = db.query('SELECT * FROM accounts WHERE integration = ?').all(MONEY_FORWARD_INTEGRATION)
+    matches = db.query('SELECT * FROM accounts WHERE integration = ?').all(REVOLUT_INTEGRATION)
     return matches as Account[]
 }
