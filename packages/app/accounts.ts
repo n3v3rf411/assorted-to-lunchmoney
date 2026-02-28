@@ -1,5 +1,5 @@
 import { confirm, input, Separator, select } from '@inquirer/prompts'
-import { type CreateManualAccountBody, LunchMoneyError } from '@lunch-money/lunch-money-js-v2'
+import { type CreateManualAccountBody, LunchMoneyError, type ManualAccount } from '@lunch-money/lunch-money-js-v2'
 import { details, error, info } from '@repo/logger'
 import { parse } from 'csv-parse/sync'
 import { stringify } from 'csv-stringify/sync'
@@ -71,11 +71,50 @@ export async function loadAccounts(): Promise<AccountStatus[]> {
 
 export async function syncMoneyForwardAccounts() {
     const mfAccounts = await loadAccounts()
-    const lmAccounts = await lm.manualAccounts.getAll()
+    const lmAccounts: ManualAccount[] = await lm.manualAccounts.getAll()
 
     const remainingLMAccounts = new Set(lmAccounts)
 
-    let matches = db.query(`SELECT * FROM accounts WHERE integration = ?`).all(MONEY_FORWARD_INTEGRATION)
+    let matches = db.query(`SELECT * FROM accounts WHERE integration = ?`).all(MONEY_FORWARD_INTEGRATION) as Account[]
+    info('Existing Money Forward ↔ Lunch Money account mappings:')
+    const lmIdToAccounts = lmAccounts.reduce(
+        (acc, item) => {
+            acc[item.id] = item
+            return acc
+        },
+        {} as { [key: number]: ManualAccount }
+    )
+    const mfIdToAccounts = mfAccounts.reduce(
+        (acc, item) => {
+            acc[item.mfId] = item
+            return acc
+        },
+        {} as { [key: string]: AccountStatus }
+    )
+
+    const unmatchedMfAccounts = new Set(mfAccounts)
+    matches.forEach((it) => {
+        const lmAccount = lmIdToAccounts[it.lm_id]
+        const mfAccount = mfIdToAccounts[it.account_id]
+
+        const lmAccountName = lmAccount?.display_name ?? lmAccount?.name ?? '<missing>'
+        const mfAccountName = mfAccount?.name ?? '<missing>'
+
+        if (mfAccount) {
+            unmatchedMfAccounts.delete(mfAccount)
+        }
+
+        info(`↳ ${details(lmAccountName)} → ${details(mfAccountName)}`)
+    })
+
+    if (unmatchedMfAccounts.size > 0) {
+        info('Unmapped Money Forward accounts:')
+        unmatchedMfAccounts.values().forEach((it) => {
+            const mfAccountName = it.name
+            info(`↳ ${details(mfAccountName)}`)
+        })
+    }
+
     let rematch = true
     if (matches.length > 0) {
         rematch = await confirm({
@@ -159,8 +198,8 @@ export async function syncMoneyForwardAccounts() {
         }
     }
 
-    matches = db.query('SELECT * FROM accounts WHERE integration = ?').all(MONEY_FORWARD_INTEGRATION)
-    return matches as Account[]
+    matches = db.query('SELECT * FROM accounts WHERE integration = ?').all(MONEY_FORWARD_INTEGRATION) as Account[]
+    return matches
 }
 
 export async function syncRevolutAccounts(revolutAccounts: string[]) {
